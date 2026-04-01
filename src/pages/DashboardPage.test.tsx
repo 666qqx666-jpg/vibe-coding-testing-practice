@@ -45,8 +45,9 @@ describe('DashboardPage', () => {
             );
             const welcomeCard = screen.getByRole('heading', { name: /Welcome, dean/ }).closest('.welcome-card');
             expect(welcomeCard).not.toBeNull();
-            expect(within(welcomeCard!).getByText('D')).toBeInTheDocument();
-            expect(within(welcomeCard!).getByText('管理員')).toBeInTheDocument();
+            const welcomeEl = welcomeCard as HTMLElement;
+            expect(within(welcomeEl).getByText('D')).toBeInTheDocument();
+            expect(within(welcomeEl).getByText('管理員')).toBeInTheDocument();
         });
 
         it('當使用者角色為 admin 時導覽應顯示「🛠️ 管理後台」連結', async () => {
@@ -78,7 +79,7 @@ describe('DashboardPage', () => {
             expect(await screen.findByText('筆記型電腦')).toBeInTheDocument();
             const card = screen.getByText('筆記型電腦').closest('.product-card');
             expect(card).not.toBeNull();
-            expect(within(card!).getByText(/NT\$\s*25[.,\u202f]000/)).toBeInTheDocument();
+            expect(within(card as HTMLElement).getByText(/NT\$\s*25[.,\u202f]000/)).toBeInTheDocument();
         });
 
         it('商品 API 回傳錯誤時應顯示錯誤訊息「伺服器錯誤，請稍後再試」', async () => {
