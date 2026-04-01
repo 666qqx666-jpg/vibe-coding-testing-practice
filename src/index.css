@@ -87,17 +87,34 @@ body {
   }
 }
 
-/* Login Page */
+/* Login Page — 浅色淡紫（仅本页覆盖 :root 变量） */
 .login-page {
+  --color-bg-primary: #f3edfa;
+  --color-bg-card: rgba(255, 255, 255, 0.92);
+  --color-bg-input: #faf7ff;
+  --color-accent-primary: #8b7ec8;
+  --color-accent-secondary: #c4b5fd;
+  --color-accent-gradient: linear-gradient(135deg, #6b5b95 0%, #9b87c9 55%, #b8a3e8 100%);
+  --color-text-primary: #2a2438;
+  --color-text-secondary: #6b6280;
+  --color-text-muted: #9d94b0;
+  --color-border: rgba(139, 126, 200, 0.22);
+  --color-border-focus: rgba(155, 135, 201, 0.4);
+  --shadow-sm: 0 1px 2px rgba(107, 91, 149, 0.06);
+  --shadow-md: 0 4px 16px rgba(107, 91, 149, 0.1);
+  --shadow-lg: 0 16px 48px rgba(107, 91, 149, 0.12);
+  --shadow-glow: 0 8px 28px rgba(155, 135, 201, 0.28);
+
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--spacing-lg);
   background:
-    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-    var(--color-bg-primary);
+    radial-gradient(ellipse at 15% 10%, rgba(196, 181, 253, 0.5) 0%, transparent 52%),
+    radial-gradient(ellipse at 85% 20%, rgba(233, 213, 255, 0.55) 0%, transparent 48%),
+    radial-gradient(ellipse at 50% 95%, rgba(221, 214, 254, 0.65) 0%, transparent 50%),
+    linear-gradient(165deg, #faf7ff 0%, #efe8f8 45%, #e8dff5 100%);
 }
 
 .login-container {
@@ -108,6 +125,7 @@ body {
   padding: var(--spacing-2xl);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
 }
 
 .login-header {
@@ -195,6 +213,11 @@ body {
 
 .error-icon {
   font-size: 1rem;
+}
+
+.login-page .error-banner {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(220, 38, 38, 0.22);
 }
 
 .login-button {
