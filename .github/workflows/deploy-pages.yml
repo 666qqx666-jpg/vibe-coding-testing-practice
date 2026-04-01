@@ -30,6 +30,10 @@ jobs:
         run: npm run build
         # GITHUB_REPOSITORY 由 Actions 注入，供 vite 计算 base（用户站 vs 项目站）
 
+      # 客户端路由直接刷新 /.../dashboard 等路径时，Pages 需回退到 index
+      - name: SPA fallback (404.html)
+        run: cp dist/index.html dist/404.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
