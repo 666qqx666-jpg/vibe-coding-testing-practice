@@ -1,22 +1,22 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { DashboardPage } from './DashboardPage';
 import { AuthProvider } from '../context/AuthContext';
 import { SCENARIO_KEYS } from '../mocks/handlers';
 import { TOKEN_KEY } from '../api/axiosInstance';
-import { productApi } from '../api/productApi';
 
-function renderDashboardAt(path = '/dashboard') {
+function renderDashboardAt(role: 'admin' | 'user' = 'admin') {
     localStorage.setItem(TOKEN_KEY, 'fake.jwt.token');
+    localStorage.setItem(SCENARIO_KEYS.userRole, role);
     return render(
-        <MemoryRouter initialEntries={[path]}>
+        <MemoryRouter initialEntries={['/dashboard']}>
             <AuthProvider>
                 <Routes>
                     <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/login" element={<div>Login Page</div>} />
-                    <Route path="/admin" element={<div>Admin Placeholder</div>} />
+                    <Route path="/admin" element={<div>Admin Stub</div>} />
+                    <Route path="/login" element={<div>Login Stub</div>} />
                 </Routes>
             </AuthProvider>
         </MemoryRouter>
@@ -25,71 +25,82 @@ function renderDashboardAt(path = '/dashboard') {
 
 describe('DashboardPage', () => {
     beforeEach(() => {
-        localStorage.removeItem(SCENARIO_KEYS.products);
         localStorage.removeItem(SCENARIO_KEYS.userRole);
+        localStorage.removeItem(SCENARIO_KEYS.products);
+        localStorage.removeItem(SCENARIO_KEYS.delay);
     });
 
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    describe('版面與使用者資訊', () => {
-        it('載入完成後應顯示標題「儀表板」、歡迎文案與使用者名稱', async () => {
+    describe('前端元素', () => {
+        it('應顯示標題「儀表板」、「登出」按鈕與「商品列表」標題', async () => {
             renderDashboardAt();
             expect(await screen.findByRole('heading', { name: '儀表板' })).toBeInTheDocument();
-            expect(await screen.findByRole('heading', { name: /Welcome, dean/ })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: '登出' })).toBeInTheDocument();
+            expect(screen.getByRole('heading', { name: '商品列表' })).toBeInTheDocument();
         });
 
-        it('admin 角色應顯示「管理員」徽章與「管理後台」連結', async () => {
-            renderDashboardAt();
-            expect(await screen.findByText('管理員')).toBeInTheDocument();
-            const adminLink = await screen.findByRole('link', { name: /管理後台/ });
-            expect(adminLink).toHaveAttribute('href', '/admin');
+        it('應顯示歡迎標題「Welcome, {username} 👋」、頭像首字與角色徽標（管理員或一般用戶）', async () => {
+            renderDashboardAt('admin');
+            expect(await screen.findByRole('heading', { name: /Welcome, dean/ })).toHaveTextContent(
+                'Welcome, dean 👋'
+            );
+            const welcomeCard = screen.getByRole('heading', { name: /Welcome, dean/ }).closest('.welcome-card');
+            expect(welcomeCard).not.toBeNull();
+            expect(within(welcomeCard!).getByText('D')).toBeInTheDocument();
+            expect(within(welcomeCard!).getByText('管理員')).toBeInTheDocument();
         });
 
-        it('user 角色應顯示「一般用戶」且不顯示管理後台連結', async () => {
-            localStorage.setItem(SCENARIO_KEYS.userRole, 'user');
-            renderDashboardAt();
-            expect(await screen.findByText('一般用戶')).toBeInTheDocument();
-            expect(screen.queryByRole('link', { name: /管理後台/ })).not.toBeInTheDocument();
+        it('當使用者角色為 admin 時導覽應顯示「🛠️ 管理後台」連結', async () => {
+            renderDashboardAt('admin');
+            await screen.findByRole('heading', { name: /Welcome, dean/ });
+            const link = screen.getByRole('link', { name: '🛠️ 管理後台' });
+            expect(link).toHaveAttribute('href', '/admin');
         });
 
-        it('頭像應顯示使用者名稱首字大寫', async () => {
-            renderDashboardAt();
-            const avatar = await screen.findByText('D');
-            expect(avatar.closest('.avatar')).toBeTruthy();
+        it('當使用者角色為 user 時導覽不應顯示「🛠️ 管理後台」連結', async () => {
+            renderDashboardAt('user');
+            await screen.findByRole('heading', { name: /Welcome, dean/ });
+            expect(screen.queryByRole('link', { name: '🛠️ 管理後台' })).not.toBeInTheDocument();
         });
     });
 
-    describe('商品列表', () => {
-        it('成功取得商品後應顯示「商品列表」與 MSW 回傳的商品名稱', async () => {
-            renderDashboardAt();
-            expect(await screen.findByRole('heading', { name: '商品列表' })).toBeInTheDocument();
-            expect(await screen.findByText('筆記型電腦')).toBeInTheDocument();
-            expect(screen.getByText('無線滑鼠')).toBeInTheDocument();
-            expect(screen.getByText('機械鍵盤')).toBeInTheDocument();
-        });
-
-        it('取得商品期間應顯示「載入商品中...」', async () => {
-            vi.spyOn(productApi, 'getProducts').mockImplementation(() => new Promise(() => {}));
+    describe('Mock API', () => {
+        it('載入商品期間應顯示「載入商品中...」', async () => {
+            localStorage.setItem(SCENARIO_KEYS.delay, '400');
             renderDashboardAt();
             expect(await screen.findByText('載入商品中...')).toBeInTheDocument();
+            await waitFor(() => {
+                expect(screen.getByText('筆記型電腦')).toBeInTheDocument();
+            });
         });
 
-        it('商品 API 回傳錯誤時應顯示後端 message', async () => {
+        it('商品 API 成功時應在列表中顯示商品名稱與價格', async () => {
+            renderDashboardAt();
+            expect(await screen.findByText('筆記型電腦')).toBeInTheDocument();
+            const card = screen.getByText('筆記型電腦').closest('.product-card');
+            expect(card).not.toBeNull();
+            expect(within(card!).getByText(/NT\$\s*25[.,\u202f]000/)).toBeInTheDocument();
+        });
+
+        it('商品 API 回傳錯誤時應顯示錯誤訊息「伺服器錯誤，請稍後再試」', async () => {
             localStorage.setItem(SCENARIO_KEYS.products, 'server_error');
             renderDashboardAt();
-            expect(await screen.findByText('伺服器錯誤，請稍後再試')).toBeInTheDocument();
+            expect(
+                await screen.findByText('伺服器錯誤，請稍後再試')
+            ).toBeInTheDocument();
+            expect(document.querySelector('.error-container')).toHaveTextContent(
+                '伺服器錯誤，請稍後再試'
+            );
         });
     });
 
-    describe('登出', () => {
-        it('點擊登出應導向登入頁', async () => {
+    describe('導航與 function 邏輯', () => {
+        it('點擊「登出」應清除登入狀態並導向登入路由', async () => {
             const user = userEvent.setup();
             renderDashboardAt();
             await screen.findByRole('heading', { name: '儀表板' });
             await user.click(screen.getByRole('button', { name: '登出' }));
-            expect(await screen.findByText('Login Page')).toBeInTheDocument();
+            expect(await screen.findByText('Login Stub')).toBeInTheDocument();
+            expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
         });
     });
 });

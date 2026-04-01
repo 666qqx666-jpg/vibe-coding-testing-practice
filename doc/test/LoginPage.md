@@ -4,7 +4,8 @@ source: src/pages/LoginPage.tsx
 ---
 
 > 狀態：初始為 [ ]、完成為 [x]  
-> 測試類型：前端元素、表單驗證、Mock API、權限與導頁
+> 測試類型：前端元素、表單驗證、Mock API、權限與導頁  
+> **本次驗證**（2026-04-01）：`vitest run --run` → `LoginPage.test.tsx` **11/11 通過**；專案合計 **24/24 通過**
 
 ---
 
